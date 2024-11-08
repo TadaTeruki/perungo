@@ -76,18 +76,21 @@ class Block(Unit):
         block_coords: list[tuple[int, int]],
     ):
         if not self.ready_to_move():
-            return
+            return 0
 
         next_coord = (self.coord[0] + direction[0], self.coord[1] + direction[1])
         if next_coord in wall_coords or next_coord in block_coords:
             self.slide_direction = (0, 0)
+            carried = self.enemies_num_carrying
             self.enemies_num_carrying = 0
-            return
+            return carried
 
         self.move(
             (self.coord[0] + direction[0], self.coord[1] + direction[1]),
             4,
         )
+
+        return 0
 
     def sliding(self):
         return self.slide_direction != (0, 0)

@@ -15,6 +15,8 @@ class GameState:
     stage_height: int
     block_pixel_width: int
     block_pixel_height: int
+    score: int
+    cleared: bool
 
     def __init__(self, stage: list[list[int]], screen: pg.Surface):
         self.stage = stage
@@ -26,6 +28,8 @@ class GameState:
         self.enemies = [Enemy(coord) for coord in get_coords_of_number(stage, 3)]
         self.blocks = [Block(coord) for coord in get_coords_of_number(stage, 1)]
         self.walls = [Wall(coord) for coord in get_coords_of_number(stage, 4)]
+        self.score = 0
+        self.cleared = False
 
     def get_units(self):
         return self.walls + self.enemies + [self.player] + self.blocks
@@ -92,7 +96,10 @@ class GameState:
                         block.add_enemy()
                     else:
                         block.start_breaking()
-            block.slide(block.slide_direction, wall_coords, block_coords)
+            carried_enemies = block.slide(
+                block.slide_direction, wall_coords, block_coords
+            )
+            self.score += int(pow(carried_enemies, 1.5)) * 100
             block.update_break()
 
         for unit in self.get_units():
@@ -105,6 +112,21 @@ class GameState:
             for i, enemy in enumerate(self.enemies)
             if i not in enemy_indices_to_remove
         ]
+
+        if (
+            self.enemies == []
+            and [block for block in self.blocks if block.sliding()] == []
+        ):
+            self.cleared = True
+
+        if self.cleared:
+            font = pg.font.Font(None, 36)
+            text = font.render("You Win!", True, (255, 255, 255))
+            screen.blit(text, (screen.get_width() // 2 - 50, screen.get_height() // 2))
+
+        font = pg.font.Font(None, 36)
+        text = font.render(f"Score: {self.score}", True, (255, 255, 255))
+        screen.blit(text, (10, 10))
 
 
 def main():
