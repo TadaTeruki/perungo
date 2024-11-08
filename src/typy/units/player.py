@@ -11,14 +11,17 @@ class Player(Unit):
     sprite_back: list[Sprite]
     sprite_left: list[Sprite]
     sprite_right: list[Sprite]
+    sprite_gameover: Sprite
+    death = False
 
     def __init__(self, coord: tuple[int, int]):
         super().__init__(coord)
         self.walk_front_direction = (0, 0)
         self.body_front_direction = (0, 1)
+        self.death = False
 
         color_pats = [
-            [(255, 0, 0), (240, 50, 50), (0, 0, 0), (240, 220, 50)],
+            [(255, 0, 0), (240, 50, 50), (0, 0, 0), (240, 220, 50), (250, 250, 250)]
         ]
 
         self.sprite_front = [
@@ -41,11 +44,18 @@ class Player(Unit):
             for player_right in load_player_right()
         ]
 
+        self.sprite_gameover = Sprite(load_player_gameover(), color_pats, False, False)
+
+    def die(self):
+        self.death = True
+
     def draw(self, screen: pg.Surface, block_pixel_width: int, block_pixel_height: int):
         true_coord = self.get_true_coord()
         anim_frame = self.current_frame // 5 % 2
 
-        if self.body_front_direction == (0, -1):
+        if self.death:
+            sprite = self.sprite_gameover
+        elif self.body_front_direction == (0, -1):
             sprite = self.sprite_back[anim_frame]
         elif self.body_front_direction == (-1, 0):
             sprite = self.sprite_left[anim_frame]
@@ -259,4 +269,25 @@ def load_player_right():
             [0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         ],
+    ]
+
+
+def load_player_gameover():
+    return [
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 3, 3, 3, 3],
+        [0, 0, 0, 0, 1, 0, 1, 1, 1, 3, 3, 3, 3, 3, 3, 3],
+        [0, 0, 0, 0, 1, 1, 1, 1, 1, 3, 3, 3, 3, 3, 3, 3],
+        [0, 1, 1, 1, 1, 1, 1, 1, 1, 3, 3, 1, 3, 3, 3, 3],
+        [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 0],
+        [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 0],
+        [0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+        [1, 1, 1, 1, 4, 4, 4, 1, 1, 4, 4, 4, 1, 1, 1, 1],
+        [1, 1, 1, 1, 4, 2, 4, 1, 1, 4, 2, 4, 1, 1, 1, 1],
+        [1, 1, 1, 1, 4, 4, 4, 1, 1, 4, 4, 4, 1, 1, 1, 1],
+        [1, 1, 1, 4, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+        [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+        [0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+        [0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     ]

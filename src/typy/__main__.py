@@ -17,6 +17,7 @@ class GameState:
     block_pixel_height: int
     score: int
     cleared: bool
+    gameover: bool
 
     def __init__(self, stage: list[list[int]], screen: pg.Surface):
         self.stage = stage
@@ -30,6 +31,7 @@ class GameState:
         self.walls = [Wall(coord) for coord in get_coords_of_number(stage, 4)]
         self.score = 0
         self.cleared = False
+        self.gameover = False
 
     def get_units(self):
         return self.walls + self.enemies + [self.player] + self.blocks
@@ -42,11 +44,31 @@ class GameState:
         blocks = [block.get_occupied_coords() for block in self.blocks]
         return [coord for block in blocks for coord in block]
 
+    def draw_units(self, screen: pg.Surface, update_coords: bool):
+        for unit in self.get_units():
+            unit.draw(screen, self.block_pixel_width, self.block_pixel_height)
+            if update_coords:
+                unit.update_coords()
+
     def draw(self, screen: pg.Surface):
         screen.fill((20, 20, 20))
 
         wall_coords = self.get_occupied_coords_by_walls()
         block_coords = self.get_occupied_coords_by_blocks()
+
+        if self.gameover:
+            self.draw_units(screen, False)
+
+            font = pg.font.Font(None, self.block_pixel_height)
+            text = font.render("GAME OVER", True, (255, 255, 255))
+            screen.blit(
+                text,
+                (
+                    screen.get_width() // 2 - self.block_pixel_width * 2,
+                    screen.get_height() // 2,
+                ),
+            )
+            return
 
         self.player.update_front_direction()
         player_req = self.player.request_move()
@@ -99,12 +121,8 @@ class GameState:
             carried_enemies = block.slide(
                 block.slide_direction, wall_coords, block_coords
             )
-            self.score += int(pow(carried_enemies, 8)) * 100
+            self.score += int(pow(carried_enemies, 1.8)) * 100
             block.update_break()
-
-        for unit in self.get_units():
-            unit.draw(screen, self.block_pixel_width, self.block_pixel_height)
-            unit.update_coords()
 
         self.blocks = [block for block in self.blocks if not block.broken()]
         self.enemies = [
@@ -113,20 +131,44 @@ class GameState:
             if i not in enemy_indices_to_remove
         ]
 
+        if any(
+            self.player.coord in enemy.get_occupied_coords() for enemy in self.enemies
+        ):
+            self.gameover = True
+            self.player.die()
+
         if (
             self.enemies == []
             and [block for block in self.blocks if block.sliding()] == []
         ):
             self.cleared = True
 
-        if self.cleared:
-            font = pg.font.Font(None, 36)
-            text = font.render("You Win!", True, (255, 255, 255))
-            screen.blit(text, (screen.get_width() // 2 - 50, screen.get_height() // 2))
+        self.draw_units(screen, True)
 
-        font = pg.font.Font(None, 36)
-        text = font.render(f"Score: {self.score}", True, (255, 255, 255))
-        screen.blit(text, (10, 10))
+        if self.cleared and not self.gameover:
+            font = pg.font.Font(None, self.block_pixel_height)
+            text = font.render("YOU WIN!", True, (255, 255, 255))
+            screen.blit(
+                text,
+                (
+                    screen.get_width() // 2 - self.block_pixel_width * 1.5,
+                    screen.get_height() // 2,
+                ),
+            )
+
+        font = pg.font.Font(None, int(self.block_pixel_height))
+        text = font.render(f"SCORE: {self.score}", True, (255, 255, 255))
+        screen.blit(text, (self.block_pixel_width, self.block_pixel_height / 3))
+        font = pg.font.Font(None, int(self.block_pixel_height / 2.0))
+        text = font.render(
+            "[ARROW KEY] TO MOVE & PUSH BLOCKS/ [ENTER KEY] TO BREAK",
+            True,
+            (255, 255, 255),
+        )
+        screen.blit(
+            text,
+            (self.block_pixel_width, screen.get_height() - self.block_pixel_height / 2),
+        )
 
 
 def main():
