@@ -28,4 +28,4 @@ $ rye run python -m perungo
 
 MIT
 
-Copyright (c) 2024 Teruki TADA (多田 瑛貴)
+(c) TADA 2024
