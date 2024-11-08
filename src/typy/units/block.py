@@ -1,5 +1,6 @@
 import pygame as pg
 from typy.units.defs import Unit
+from typy.units.sprite import Sprite
 
 
 class Block(Unit):
@@ -8,12 +9,20 @@ class Block(Unit):
     max_break_count: int
     enemies_num_carrying: int
 
+    sprite: Sprite
+
     def __init__(self, coord: tuple[int, int]):
         super().__init__(coord)
         self.slide_direction = (0, 0)
         self.break_count = 0
         self.max_break_count = 20
         self.enemies_num_carrying = 0
+
+        color_pats = [
+            [(0, 140, 200), (40, 80, 255)],
+        ]
+
+        self.sprite = Sprite(load_brick_wall_sprite(), color_pats, False, False)
 
     def draw(self, screen: pg.Surface, block_pixel_width: int, block_pixel_height: int):
         true_coord = self.get_true_coord()
@@ -25,26 +34,32 @@ class Block(Unit):
             block_pixel_width,
             block_pixel_height,
         )
-        color = (40, 80, 220)
         if self.break_count > 0:
             if self.break_count == self.max_break_count:
                 return
             pg.draw.rect(
                 screen,
-                color,
+                (0, 120, 200),
                 rect,
                 int(float(block_pixel_width) * 0.5 * (1.0 - broken_prop)),
             )
         else:
-            pg.draw.rect(screen, color, rect)
+            self.sprite.draw(
+                screen,
+                true_coord[0] * block_pixel_width,
+                true_coord[1] * block_pixel_height,
+                0,
+                block_pixel_width,
+                block_pixel_height,
+            )
 
         if self.enemies_num_carrying > 0:
             rect_width = int(block_pixel_width * 0.3)
             rect_height = int(block_pixel_height * 0.3)
             if self.slide_direction[1] != 0:
-                rect_width = int(block_pixel_width * 1.2)
+                rect_width = int(block_pixel_width * 0.9)
             if self.slide_direction[0] != 0:
-                rect_height = int(block_pixel_height * 1.2)
+                rect_height = int(block_pixel_height * 0.9)
 
             rect_center_x = self.slide_direction[0] * block_pixel_width * 0.5 + 0.5
             rect_center_y = self.slide_direction[1] * block_pixel_height * 0.5 + 0.5
@@ -106,3 +121,24 @@ class Block(Unit):
     def update_break(self):
         if self.break_count > 0 and self.break_count < self.max_break_count:
             self.break_count += 1
+
+
+def load_brick_wall_sprite():
+    return [
+        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+        [0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1],
+        [0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1],
+        [0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1],
+        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+        [0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0],
+        [0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0],
+        [0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0],
+        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+        [0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0],
+        [0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0],
+        [0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0],
+        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+        [0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0],
+        [0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0],
+        [0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0],
+    ]

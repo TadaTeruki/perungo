@@ -99,7 +99,7 @@ class GameState:
             carried_enemies = block.slide(
                 block.slide_direction, wall_coords, block_coords
             )
-            self.score += int(pow(carried_enemies, 1.5)) * 100
+            self.score += int(pow(carried_enemies, 8)) * 100
             block.update_break()
 
         for unit in self.get_units():
