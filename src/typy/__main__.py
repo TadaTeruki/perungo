@@ -41,8 +41,12 @@ class GameState:
     def draw(self, screen: pg.Surface):
         screen.fill((20, 20, 20))
 
+        self.blocks = [block for block in self.blocks if not block.broken()]
+
         wall_coords = self.get_occupied_coords_by_walls()
         block_coords = self.get_occupied_coords_by_blocks()
+
+        self.player.update_front_direction()
 
         player_req = self.player.request_move()
 
@@ -52,30 +56,46 @@ class GameState:
                 player_req.reject()
 
             for i, block in enumerate(self.blocks):
-                if player_req.next_coord() == block.coord:
-                    block_next_coord = (
-                        block.coord[0] + player_req.direction[0],
-                        block.coord[1] + player_req.direction[1],
-                    )
-                    if (
-                        block_next_coord not in wall_coords
-                        and block_next_coord not in block_coords
-                    ):
-                        movable_block_indices.append(i)
-                    else:
-                        player_req.reject()
+                if player_req.next_coord() != block.coord:
+                    continue
+
+                block_next_coord = (
+                    block.coord[0] + player_req.direction[0],
+                    block.coord[1] + player_req.direction[1],
+                )
+                in_wall = block_next_coord in wall_coords
+                in_block = block_next_coord in block_coords
+                if not in_wall and not in_block:
+                    movable_block_indices.append(i)
+                else:
+                    player_req.reject()
 
         if player_req and player_req.applied():
             self.player.apply_move_request(player_req)
             for i in movable_block_indices:
                 self.blocks[i].start_slide(player_req.direction)
+        elif self.player.ready_to_move():
+            keys = pg.key.get_pressed()
+            if keys[pg.K_RETURN]:
+                for i, block in enumerate(self.blocks):
+                    if self.player.get_facing_coord() == block.coord:
+                        block.start_breaking()
 
         for enemy in self.enemies:
             enemy.walk(wall_coords, block_coords)
 
         for block in self.blocks:
-            block.slide(block.slide_direction, wall_coords, block_coords)
+            if not block.sliding() and not block.broken():
+                enemy_coords = [
+                    coords
+                    for enemy in self.enemies
+                    for coords in enemy.get_occupied_coords()
+                ]
 
+                if block.coord in enemy_coords:
+                    block.start_breaking()
+            block.slide(block.slide_direction, wall_coords, block_coords)
+            block.update_break()
         for unit in self.get_units():
             unit.draw(screen, self.block_pixel_width, self.block_pixel_height)
             unit.update_coords()
