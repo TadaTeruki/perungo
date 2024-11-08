@@ -28,7 +28,7 @@ class GameState:
         self.walls = [Wall(coord) for coord in get_coords_of_number(stage, 4)]
 
     def get_units(self):
-        return self.blocks + self.walls + self.enemies + [self.player]
+        return self.walls + self.enemies + [self.player] + self.blocks
 
     def get_occupied_coords_by_walls(self):
         walls = [wall.get_occupied_coords() for wall in self.walls]
@@ -41,13 +41,10 @@ class GameState:
     def draw(self, screen: pg.Surface):
         screen.fill((20, 20, 20))
 
-        self.blocks = [block for block in self.blocks if not block.broken()]
-
         wall_coords = self.get_occupied_coords_by_walls()
         block_coords = self.get_occupied_coords_by_blocks()
 
         self.player.update_front_direction()
-
         player_req = self.player.request_move()
 
         movable_block_indices: list[int] = []
@@ -84,21 +81,30 @@ class GameState:
         for enemy in self.enemies:
             enemy.walk(wall_coords, block_coords)
 
+        enemy_indices_to_remove: list[int] = []
         for block in self.blocks:
-            if not block.sliding() and not block.broken():
-                enemy_coords = [
-                    coords
-                    for enemy in self.enemies
-                    for coords in enemy.get_occupied_coords()
-                ]
-
-                if block.coord in enemy_coords:
-                    block.start_breaking()
+            if block.broken():
+                continue
+            for i, enemy in enumerate(self.enemies):
+                if block.overlap(enemy):
+                    if block.sliding():
+                        enemy_indices_to_remove.append(i)
+                        block.add_enemy()
+                    else:
+                        block.start_breaking()
             block.slide(block.slide_direction, wall_coords, block_coords)
             block.update_break()
+
         for unit in self.get_units():
             unit.draw(screen, self.block_pixel_width, self.block_pixel_height)
             unit.update_coords()
+
+        self.blocks = [block for block in self.blocks if not block.broken()]
+        self.enemies = [
+            enemy
+            for i, enemy in enumerate(self.enemies)
+            if i not in enemy_indices_to_remove
+        ]
 
 
 def main():

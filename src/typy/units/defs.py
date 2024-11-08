@@ -52,6 +52,11 @@ class Unit:
             return [self.coord]
         return [self.coord, self.next_coord]
 
+    def overlap(self, other: "Unit"):
+        return any(
+            coord in other.get_occupied_coords() for coord in self.get_occupied_coords()
+        )
+
 
 class MoveRequest:
     direction: tuple[int, int]
