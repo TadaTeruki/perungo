@@ -55,6 +55,30 @@ class Unit:
         return [self.coord, self.next_coord]
 
 
+class MoveRequest:
+    direction: tuple[int, int]
+    current_coord: tuple[int, int]
+    rejected: bool
+
+    def __init__(self, direction: tuple[int, int], current_coord: tuple[int, int]):
+        self.direction = direction
+        self.current_coord = current_coord
+        self.rejected = False
+
+    def next_coord(self):
+        next = (
+            self.current_coord[0] + self.direction[0],
+            self.current_coord[1] + self.direction[1],
+        )
+        return next
+
+    def reject(self):
+        self.rejected = True
+
+    def applied(self):
+        return not self.rejected
+
+
 class Player(Unit):
     def draw(self, screen: pg.Surface, block_pixel_width: int, block_pixel_height: int):
         true_coord = self.get_true_coord()
@@ -68,7 +92,7 @@ class Player(Unit):
             block_pixel_width // 2,
         )
 
-    def walk(self, walls: list[tuple[int, int]]):
+    def request_move(self):
         if not self.ready_to_move():
             return
 
@@ -83,12 +107,11 @@ class Player(Unit):
         elif keys[pg.K_DOWN] or keys[pg.K_s]:
             direction = (0, 1)
 
-        next_coord = self.coord[0] + direction[0], self.coord[1] + direction[1]
+        request = MoveRequest(direction, self.coord)
+        return request
 
-        if next_coord in walls:
-            return
-
-        self.move(next_coord, 10)
+    def apply_move_request(self, request: MoveRequest):
+        self.move(request.next_coord(), 10)
 
 
 class Enemy(Unit):
@@ -140,6 +163,12 @@ class Enemy(Unit):
 
 
 class Block(Unit):
+    slide_direction: tuple[int, int]
+
+    def __init__(self, coord: tuple[int, int]):
+        super().__init__(coord)
+        self.slide_direction = (0, 0)
+
     def draw(self, screen: pg.Surface, block_pixel_width: int, block_pixel_height: int):
         true_coord = self.get_true_coord()
         pg.draw.rect(
@@ -151,6 +180,28 @@ class Block(Unit):
                 block_pixel_width,
                 block_pixel_height,
             ),
+        )
+
+    def start_slide(self, direction: tuple[int, int]):
+        self.slide_direction = direction
+
+    def slide(
+        self,
+        direction: tuple[int, int],
+        wall_coords: list[tuple[int, int]],
+        block_coords: list[tuple[int, int]],
+    ):
+        if not self.ready_to_move():
+            return
+
+        next_coord = (self.coord[0] + direction[0], self.coord[1] + direction[1])
+        if next_coord in wall_coords or next_coord in block_coords:
+            self.slide_direction = (0, 0)
+            return
+
+        self.move(
+            (self.coord[0] + direction[0], self.coord[1] + direction[1]),
+            4,
         )
 
 
@@ -207,9 +258,37 @@ class GameState:
         wall_coords = self.get_occupied_coords_by_walls()
         block_coords = self.get_occupied_coords_by_blocks()
 
-        self.player.walk(wall_coords)
+        player_req = self.player.request_move()
+
+        movable_block_indices: list[int] = []
+        if player_req:
+            if player_req.next_coord() in wall_coords:
+                player_req.reject()
+
+            for i, block in enumerate(self.blocks):
+                if player_req.next_coord() == block.coord:
+                    block_next_coord = (
+                        block.coord[0] + player_req.direction[0],
+                        block.coord[1] + player_req.direction[1],
+                    )
+                    if (
+                        block_next_coord not in wall_coords
+                        and block_next_coord not in block_coords
+                    ):
+                        movable_block_indices.append(i)
+                    else:
+                        player_req.reject()
+
+        if player_req and player_req.applied():
+            self.player.apply_move_request(player_req)
+            for i in movable_block_indices:
+                self.blocks[i].start_slide(player_req.direction)
+
         for enemy in self.enemies:
             enemy.walk(wall_coords, block_coords)
+
+        for block in self.blocks:
+            block.slide(block.slide_direction, wall_coords, block_coords)
 
         for unit in self.get_units():
             unit.draw(screen, self.block_pixel_width, self.block_pixel_height)
