@@ -11,8 +11,8 @@ def main():
             if event.type == pg.QUIT:
                 pg.quit()
                 return
-        screen.fill((100, 250, 250))
-        pg.draw.circle(screen, (250, 100, 100), (400, 300), 100)
+        screen.fill((50, 200, 200))
+        pg.draw.circle(screen, (50, 150, 50), (400, 300), 100)
         pg.display.flip()
 
 
