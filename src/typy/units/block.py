@@ -11,7 +11,7 @@ class Block(Unit):
         super().__init__(coord)
         self.slide_direction = (0, 0)
         self.break_count = 0
-        self.max_break_count = 10
+        self.max_break_count = 20
 
     def draw(self, screen: pg.Surface, block_pixel_width: int, block_pixel_height: int):
         true_coord = self.get_true_coord()
