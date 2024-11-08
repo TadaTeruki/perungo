@@ -68,6 +68,28 @@ class Player(Unit):
             block_pixel_width // 2,
         )
 
+    def walk(self, walls: list[tuple[int, int]]):
+        if not self.ready_to_move():
+            return
+
+        keys = pg.key.get_pressed()
+        direction = (0, 0)
+        if keys[pg.K_LEFT] or keys[pg.K_a]:
+            direction = (-1, 0)
+        elif keys[pg.K_RIGHT] or keys[pg.K_d]:
+            direction = (1, 0)
+        elif keys[pg.K_UP] or keys[pg.K_w]:
+            direction = (0, -1)
+        elif keys[pg.K_DOWN] or keys[pg.K_s]:
+            direction = (0, 1)
+
+        next_coord = self.coord[0] + direction[0], self.coord[1] + direction[1]
+
+        if next_coord in walls:
+            return
+
+        self.move(next_coord, 10)
+
 
 class Enemy(Unit):
     prev_direction: tuple[int, int]
@@ -169,7 +191,7 @@ class GameState:
         self.walls = [Wall(coord) for coord in get_coords_of_number(stage, 4)]
 
     def get_units(self):
-        return [self.player] + self.enemies + self.blocks + self.walls
+        return self.blocks + self.walls + self.enemies + [self.player]
 
     def get_occupied_coords_by_walls(self):
         walls = [wall.get_occupied_coords() for wall in self.walls]
@@ -185,6 +207,7 @@ class GameState:
         wall_coords = self.get_occupied_coords_by_walls()
         block_coords = self.get_occupied_coords_by_blocks()
 
+        self.player.walk(wall_coords)
         for enemy in self.enemies:
             enemy.walk(wall_coords, block_coords)
 
