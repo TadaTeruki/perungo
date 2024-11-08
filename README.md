@@ -9,6 +9,12 @@
 
 Rye/Pylance開発環境の検証用に開発したものです。
 
+# 実行方法
+
+```
+$ rye run python -m perungo
+```
+
 # License
 
 MIT

@@ -1,5 +1,5 @@
 [project]
-name = "typy"
+name = "perungo"
 version = "0.1.0"
 description = "Add your description here"
 authors = [
@@ -23,4 +23,4 @@ dev-dependencies = []
 allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/typy"]
+packages = ["src/perungo"]

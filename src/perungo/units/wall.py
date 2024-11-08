@@ -1,5 +1,5 @@
 import pygame as pg
-from typy.units.defs import Unit
+from perungo.units.defs import Unit
 
 
 class Wall(Unit):

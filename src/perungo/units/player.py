@@ -1,6 +1,6 @@
 import pygame as pg
-from typy.units.defs import Unit, MoveRequest
-from typy.units.sprite import Sprite
+from perungo.units.defs import Unit, MoveRequest
+from perungo.units.sprite import Sprite
 
 
 class Player(Unit):

@@ -1,9 +1,9 @@
 import pygame as pg
-from typy.stage import load_stage, get_coords_of_number
-from typy.units.block import Block
-from typy.units.enemy import Enemy
-from typy.units.player import Player
-from typy.units.wall import Wall
+from perungo.stage import load_stage, get_coords_of_number
+from perungo.units.block import Block
+from perungo.units.enemy import Enemy
+from perungo.units.player import Player
+from perungo.units.wall import Wall
 
 
 class GameState:
