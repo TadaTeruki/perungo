@@ -11,4 +11,4 @@
 
 -e file:.
 pygame==2.6.1
-    # via typy
+    # via perungo
