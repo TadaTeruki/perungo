@@ -98,6 +98,12 @@ class Player(Unit):
         request = MoveRequest(self.walk_front_direction, self.coord)
         return request
 
+    def clear_move(self):
+        self.body_front_direction = (1, 0)
+        self.walk_front_direction = (1, 0)
+        if self.ready_to_move():
+            self.move(self.get_facing_coord(), 10)
+
     def get_facing_coord(self):
         return (
             self.coord[0] + self.body_front_direction[0],

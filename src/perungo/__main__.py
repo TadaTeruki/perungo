@@ -16,7 +16,9 @@ class GameState:
     block_pixel_width: int
     block_pixel_height: int
     score: int
-    cleared: bool
+    clear: bool
+    clear_time: int
+    start_duration: int
     gameover: bool
 
     def __init__(self, stage: list[list[int]], screen: pg.Surface):
@@ -30,11 +32,13 @@ class GameState:
         self.blocks = [Block(coord) for coord in get_coords_of_number(stage, 1)]
         self.walls = [Wall(coord) for coord in get_coords_of_number(stage, 4)]
         self.score = 0
-        self.cleared = False
+        self.clear = False
+        self.clear_time = 0
+        self.start_duration = 50
         self.gameover = False
 
     def get_units(self):
-        return self.walls + self.enemies + [self.player] + self.blocks
+        return self.enemies + [self.player] + self.walls + self.blocks
 
     def get_occupied_coords_by_walls(self):
         walls = [wall.get_occupied_coords() for wall in self.walls]
@@ -70,82 +74,105 @@ class GameState:
             )
             return
 
-        self.player.update_front_direction()
-        player_req = self.player.request_move()
-
-        movable_block_indices: list[int] = []
-        if player_req:
-            if player_req.next_coord() in wall_coords:
-                player_req.reject()
-
-            for i, block in enumerate(self.blocks):
-                if player_req.next_coord() != block.coord:
-                    continue
-
-                block_next_coord = (
-                    block.coord[0] + player_req.direction[0],
-                    block.coord[1] + player_req.direction[1],
-                )
-                in_wall = block_next_coord in wall_coords
-                in_block = block_next_coord in block_coords
-                if not in_wall and not in_block:
-                    movable_block_indices.append(i)
-                else:
-                    player_req.reject()
-
-        if player_req and player_req.applied():
-            self.player.apply_move_request(player_req)
-            for i in movable_block_indices:
-                self.blocks[i].start_slide(player_req.direction)
-        elif self.player.ready_to_move():
-            keys = pg.key.get_pressed()
-            if keys[pg.K_RETURN]:
-                for i, block in enumerate(self.blocks):
-                    if self.player.get_facing_coord() == block.coord:
-                        block.start_breaking()
-
-        for enemy in self.enemies:
-            enemy.walk(wall_coords, block_coords)
-
-        enemy_indices_to_remove: list[int] = []
-        for block in self.blocks:
-            if block.broken():
-                continue
-            for i, enemy in enumerate(self.enemies):
-                if block.overlap(enemy):
-                    if block.sliding():
-                        enemy_indices_to_remove.append(i)
-                        block.add_enemy()
-                    else:
-                        block.start_breaking()
-            carried_enemies = block.slide(
-                block.slide_direction, wall_coords, block_coords
-            )
-            self.score += int(pow(carried_enemies, 1.8)) * 100
-            block.update_break()
-
-        self.blocks = [block for block in self.blocks if not block.broken()]
-        self.enemies = [
-            enemy
-            for i, enemy in enumerate(self.enemies)
-            if i not in enemy_indices_to_remove
-        ]
-
-        if any(
-            self.player.coord in enemy.get_occupied_coords() for enemy in self.enemies
-        ):
-            self.gameover = True
-            self.player.die()
-
-        if (
-            self.enemies == []
-            and [block for block in self.blocks if block.sliding()] == []
-        ):
-            self.cleared = True
-
         self.draw_units(screen, True)
 
-        if self.cleared and not self.gameover:
+        if self.start_duration > 0:
+            self.start_duration -= 1
+
+            font = pg.font.Font(None, self.block_pixel_height)
+            text = font.render("READY", True, (255, 255, 255))
+            screen.blit(
+                text,
+                (
+                    screen.get_width() // 2 - self.block_pixel_width,
+                    screen.get_height() // 2,
+                ),
+            )
+        elif self.clear:
+            if self.clear_time >= 35:
+                self.player.clear_move()
+            self.blocks = [
+                block for block in self.blocks if block.coord[0] > self.clear_time // 3
+            ]
+            self.clear_time += 1
+        else:
+            # player can be controlled
+            self.player.update_front_direction()
+            player_req = self.player.request_move()
+
+            movable_block_indices: list[int] = []
+            if player_req:
+                if player_req.next_coord() in wall_coords:
+                    player_req.reject()
+
+                for i, block in enumerate(self.blocks):
+                    if player_req.next_coord() != block.coord:
+                        continue
+
+                    block_next_coord = (
+                        block.coord[0] + player_req.direction[0],
+                        block.coord[1] + player_req.direction[1],
+                    )
+                    in_wall = block_next_coord in wall_coords
+                    in_block = block_next_coord in block_coords
+                    if not in_wall and not in_block:
+                        movable_block_indices.append(i)
+                    else:
+                        player_req.reject()
+
+            if player_req and player_req.applied():
+                self.player.apply_move_request(player_req)
+                for i in movable_block_indices:
+                    self.blocks[i].start_slide(player_req.direction)
+
+            elif self.player.ready_to_move():
+                keys = pg.key.get_pressed()
+                if keys[pg.K_RETURN]:
+                    for i, block in enumerate(self.blocks):
+                        if self.player.get_facing_coord() == block.coord:
+                            block.start_breaking()
+
+            for enemy in self.enemies:
+                enemy.walk(wall_coords, block_coords)
+
+            enemy_indices_to_remove: list[int] = []
+            for block in self.blocks:
+                if block.broken():
+                    continue
+                for i, enemy in enumerate(self.enemies):
+                    if block.overlap(enemy):
+                        if block.sliding():
+                            enemy_indices_to_remove.append(i)
+                            block.add_enemy()
+                        else:
+                            block.start_breaking()
+                carried_enemies = block.slide(
+                    block.slide_direction, wall_coords, block_coords
+                )
+                self.score += int(pow(carried_enemies, 1.8)) * 100
+                block.update_break()
+
+            self.blocks = [block for block in self.blocks if not block.broken()]
+            self.enemies = [
+                enemy
+                for i, enemy in enumerate(self.enemies)
+                if i not in enemy_indices_to_remove
+            ]
+
+            if any(
+                self.player.coord in enemy.get_occupied_coords()
+                for enemy in self.enemies
+            ):
+                self.gameover = True
+                self.player.die()
+
+            if (
+                self.enemies == []
+                and [block for block in self.blocks if block.sliding()] == []
+            ):
+                self.clear = True
+
+        if self.clear_time > 120 and not self.gameover:
             font = pg.font.Font(None, self.block_pixel_height)
             text = font.render("YOU WIN!", True, (255, 255, 255))
             screen.blit(
@@ -159,6 +186,14 @@ class GameState:
         font = pg.font.Font(None, int(self.block_pixel_height))
         text = font.render(f"SCORE: {self.score}", True, (255, 255, 255))
         screen.blit(text, (self.block_pixel_width, self.block_pixel_height / 3))
+        text = font.render("(C) TADA 2024", True, (255, 255, 255))
+        screen.blit(
+            text,
+            (
+                screen.get_width() - self.block_pixel_width * 6,
+                self.block_pixel_height / 3,
+            ),
+        )
         font = pg.font.Font(None, int(self.block_pixel_height / 2.0))
         text = font.render(
             "[ARROW KEY] TO MOVE & PUSH BLOCKS/ [ENTER KEY] TO BREAK",
@@ -173,7 +208,7 @@ class GameState:
 
 def main():
     pg.init()
-    screen = pg.display.set_mode((450, 450))
+    screen = pg.display.set_mode((450, 450 / 15 * 17))
     pg.display.set_caption("Perungo")
 
     stage = load_stage()
