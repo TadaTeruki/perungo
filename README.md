@@ -3,8 +3,8 @@
 「ペンゴ」風のシンプルなPygameベースのゲームです。
 
 <p>
-  <img src="https://github.com/user-attachments/assets/30898b6e-4cd8-4aab-869b-f5c24454cc47" width="348"></img>
-  <img src="https://github.com/user-attachments/assets/00475ba7-a5cd-4bcd-9df1-c4680675210c" width="348"></img>
+  <img src="https://github.com/user-attachments/assets/1f29f4de-aef4-46bc-b9b6-97ac79b6aec2" width="348"></img>
+  <img src="https://github.com/user-attachments/assets/d2dc8b60-58ac-4dd9-8319-24e5ca65a614" width="348"></img>
 </p>
 
 Rye/Pylance開発環境の検証用に開発したものです。
@@ -27,5 +27,3 @@ $ rye run python -m perungo
 # License
 
 MIT
-
-(c) TADA 2024
