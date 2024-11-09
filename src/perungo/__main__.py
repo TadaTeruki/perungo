@@ -186,7 +186,7 @@ class GameState:
         font = pg.font.Font(None, int(self.block_pixel_height))
         text = font.render(f"SCORE: {self.score}", True, (255, 255, 255))
         screen.blit(text, (self.block_pixel_width, self.block_pixel_height / 3))
-        text = font.render("(C) TADA 2024", True, (255, 255, 255))
+        text = font.render("(P) TADA 2024", True, (255, 255, 255))
         screen.blit(
             text,
             (
@@ -209,7 +209,7 @@ class GameState:
 def main():
     pg.init()
     screen = pg.display.set_mode((450, 450 / 15 * 17))
-    pg.display.set_caption("Perungo")
+    pg.display.set_caption("PERUNGO")
 
     stage = load_stage()
 
